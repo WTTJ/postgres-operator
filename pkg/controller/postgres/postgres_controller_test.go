@@ -39,6 +39,7 @@ var _ = Describe("ReconcilePostgres", func() {
 		sc = scheme.Scheme
 		sc.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.Postgres{})
 		sc.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.PostgresList{})
+		sc.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.PostgresUserList{})
 		// Create mock reconcile request
 		req = reconcile.Request{
 			NamespacedName: types.NamespacedName{
@@ -71,7 +72,6 @@ var _ = Describe("ReconcilePostgres", func() {
 	})
 
 	Describe("Checking deletion logic", func() {
-
 		var (
 			postgresCR *v1alpha1.Postgres
 			cl         client.Client
@@ -102,7 +102,6 @@ var _ = Describe("ReconcilePostgres", func() {
 		})
 
 		Context("DropOnDelete is unset", func() {
-
 			BeforeEach(func() {
 				// Create client
 				cl = fake.NewFakeClient([]runtime.Object{postgresCR}...)
@@ -133,11 +132,9 @@ var _ = Describe("ReconcilePostgres", func() {
 				// Call Reconcile
 				rp.Reconcile(req)
 			})
-
 		})
 
 		Context("DropOnDelete is enabled", func() {
-
 			var (
 				dropGroupRole  *gomock.Call
 				dropReaderRole *gomock.Call
@@ -167,7 +164,6 @@ var _ = Describe("ReconcilePostgres", func() {
 			})
 
 			Context("Deletion is successful", func() {
-
 				It("should remove finalizer", func() {
 					// No method should return error
 					dropGroupRole.Return(nil)
@@ -184,11 +180,9 @@ var _ = Describe("ReconcilePostgres", func() {
 					Expect(err).To(BeNil())
 					Expect(len(foundPostgres.GetFinalizers())).To(Equal(0))
 				})
-
 			})
 
 			Context("Deletion is not successful", func() {
-
 				It("should not remove finalizer when any database action fails", func() {
 					// DropDatabase fails
 					dropDatabase.Return(fmt.Errorf("Could not drop database"))
@@ -202,11 +196,9 @@ var _ = Describe("ReconcilePostgres", func() {
 					Expect(err).To(BeNil())
 					Expect(foundPostgres.GetFinalizers()[0]).To(Equal("finalizer.db.movetokube.com"))
 				})
-
 			})
 
 			Context("Another Postgres exists with same database", func() {
-
 				BeforeEach(func() {
 					// Create two Postgres with same database name
 					dropPostgres := postgresCR.DeepCopy()
@@ -233,15 +225,11 @@ var _ = Describe("ReconcilePostgres", func() {
 					// Call Reconcile
 					rp.Reconcile(req)
 				})
-
 			})
-
 		})
-
 	})
 
 	Describe("Checking creation logic", func() {
-
 		var (
 			cl client.Client
 			rp *ReconcilePostgres
@@ -257,7 +245,6 @@ var _ = Describe("ReconcilePostgres", func() {
 		}
 
 		Context("MasterRole is unset", func() {
-
 			BeforeEach(func() {
 				// Create client
 				cl = fake.NewFakeClient([]runtime.Object{postgresCR}...)
@@ -281,11 +268,9 @@ var _ = Describe("ReconcilePostgres", func() {
 				// Call Reconcile
 				rp.Reconcile(req)
 			})
-
 		})
 
 		Context("MasterRole is set", func() {
-
 			BeforeEach(func() {
 				// Create client
 				modPostgres := postgresCR.DeepCopy()
@@ -311,11 +296,9 @@ var _ = Describe("ReconcilePostgres", func() {
 				// Call Reconcile
 				rp.Reconcile(req)
 			})
-
 		})
 
 		Context("Correct annotation filter is set", func() {
-
 			BeforeEach(func() {
 				// Create client
 				modPostgres := postgresCR.DeepCopy()
@@ -342,7 +325,6 @@ var _ = Describe("ReconcilePostgres", func() {
 		})
 
 		Context("Incorrect annotation filter is set", func() {
-
 			BeforeEach(func() {
 				// Create client
 				modPostgres := postgresCR.DeepCopy()
@@ -367,7 +349,6 @@ var _ = Describe("ReconcilePostgres", func() {
 		})
 
 		Context("Creation is successful", func() {
-
 			BeforeEach(func() {
 				// Create client
 				cl = fake.NewFakeClient([]runtime.Object{postgresCR}...)
@@ -411,11 +392,9 @@ var _ = Describe("ReconcilePostgres", func() {
 				err = cl.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: namespace}, foundPostgres)
 				Expect(foundPostgres.GetFinalizers()[0]).To(Equal(expectedFinalizer))
 			})
-
 		})
 
 		Context("Creation is not successful", func() {
-
 			BeforeEach(func() {
 				// Create client
 				cl = fake.NewFakeClient([]runtime.Object{postgresCR}...)
@@ -445,13 +424,10 @@ var _ = Describe("ReconcilePostgres", func() {
 				Expect(foundPostgres.Status.Roles).To(Equal(expectedRoles))
 				Expect(foundPostgres.Status.Succeeded).To(BeFalse())
 			})
-
 		})
-
 	})
 
 	Describe("Checking extensions logic", func() {
-
 		var (
 			cl client.Client
 			rp *ReconcilePostgres
@@ -471,7 +447,6 @@ var _ = Describe("ReconcilePostgres", func() {
 		}
 
 		Context("Postgres has no extensions", func() {
-
 			BeforeEach(func() {
 				// Create client
 				cl = fake.NewFakeClient([]runtime.Object{postgresCR}...)
@@ -499,11 +474,9 @@ var _ = Describe("ReconcilePostgres", func() {
 				cl.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: namespace}, foundPostgres)
 				Expect(len(foundPostgres.Status.Extensions)).To(Equal(0))
 			})
-
 		})
 
 		Context("Postgres has extensions", func() {
-
 			BeforeEach(func() {
 				// Add extensions to Postgres object
 				extPostgres := postgresCR.DeepCopy()
@@ -520,7 +493,6 @@ var _ = Describe("ReconcilePostgres", func() {
 			})
 
 			Context("Creation is successful", func() {
-
 				BeforeEach(func() {
 					// Expected method calls
 					pg.EXPECT().CreateExtension(name, "pg_stat_statements", gomock.Any()).Return(nil).Times(1)
@@ -537,11 +509,9 @@ var _ = Describe("ReconcilePostgres", func() {
 					Expect(foundPostgres.Status.Extensions[0]).To(Equal("pg_stat_statements"))
 					Expect(foundPostgres.Status.Extensions[1]).To(Equal("hstore"))
 				})
-
 			})
 
 			Context("Creation is not successful", func() {
-
 				BeforeEach(func() {
 					// Expected method calls
 					pg.EXPECT().CreateExtension(name, "pg_stat_statements", gomock.Any()).Return(fmt.Errorf("Could not create extension")).Times(1)
@@ -557,13 +527,10 @@ var _ = Describe("ReconcilePostgres", func() {
 					Expect(len(foundPostgres.Status.Extensions)).To(Equal(1))
 					Expect(foundPostgres.Status.Extensions[0]).To(Equal("hstore"))
 				})
-
 			})
-
 		})
 
 		Context("Subset of extensions already created", func() {
-
 			BeforeEach(func() {
 				// Add extensions to Postgres object
 				extPostgres := postgresCR.DeepCopy()
@@ -581,7 +548,6 @@ var _ = Describe("ReconcilePostgres", func() {
 			})
 
 			Context("Creation is successful", func() {
-
 				It("should not recreate extisting extension", func() {
 					// Expected method calls
 					pg.EXPECT().CreateExtension(name, "pg_stat_statements", gomock.Any()).Return(nil).Times(1)
@@ -595,15 +561,11 @@ var _ = Describe("ReconcilePostgres", func() {
 					Expect(foundPostgres.Status.Extensions[0]).To(Equal("hstore"))
 					Expect(foundPostgres.Status.Extensions[1]).To(Equal("pg_stat_statements"))
 				})
-
 			})
-
 		})
-
 	})
 
 	Describe("Checking schemas logic", func() {
-
 		var (
 			cl client.Client
 			rp *ReconcilePostgres
@@ -628,7 +590,6 @@ var _ = Describe("ReconcilePostgres", func() {
 		}
 
 		Context("Postgres has no schemas", func() {
-
 			BeforeEach(func() {
 				// Create client
 				cl = fake.NewFakeClient([]runtime.Object{postgresCR}...)
@@ -656,11 +617,9 @@ var _ = Describe("ReconcilePostgres", func() {
 				cl.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: namespace}, foundPostgres)
 				Expect(len(foundPostgres.Status.Schemas)).To(Equal(0))
 			})
-
 		})
 
 		Context("Postgres has schemas", func() {
-
 			BeforeEach(func() {
 				// Add schemas to Postgres object
 				schemaPostgres := postgresCR.DeepCopy()
@@ -677,7 +636,6 @@ var _ = Describe("ReconcilePostgres", func() {
 			})
 
 			Context("Creation is successful", func() {
-
 				BeforeEach(func() {
 					// Expected method calls
 					// customers schema
@@ -698,16 +656,14 @@ var _ = Describe("ReconcilePostgres", func() {
 					Expect(foundPostgres.Status.Schemas[0]).To(Equal("customers"))
 					Expect(foundPostgres.Status.Schemas[1]).To(Equal("stores"))
 				})
-
 			})
 
 			Context("Creation is not successful", func() {
-
 				BeforeEach(func() {
 					// Expected method calls
 					// customers schema errors
 					pg.EXPECT().CreateSchema(name, name+"-group", "customers", gomock.Any()).Return(fmt.Errorf("Could not create schema")).Times(1)
-					pg.EXPECT().SetSchemaPrivileges(name, name+"-group", gomock.Any(), "customers", gomock.Any(), gomock.Any() ,gomock.Any()).Return(nil).Times(0)
+					pg.EXPECT().SetSchemaPrivileges(name, name+"-group", gomock.Any(), "customers", gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(0)
 					// stores schema
 					pg.EXPECT().CreateSchema(name, name+"-group", "stores", gomock.Any()).Return(nil).Times(1)
 					pg.EXPECT().SetSchemaPrivileges(name, name+"-group", name+"-reader", "stores", gomock.Any(), false, gomock.Any()).Return(nil).Times(1)
@@ -724,13 +680,10 @@ var _ = Describe("ReconcilePostgres", func() {
 					Expect(len(foundPostgres.Status.Schemas)).To(Equal(1))
 					Expect(foundPostgres.Status.Schemas[0]).To(Equal("stores"))
 				})
-
 			})
-
 		})
 
 		Context("Subset of schema already created", func() {
-
 			BeforeEach(func() {
 				// Add schemas to Postgres object
 				schemaPostgres := postgresCR.DeepCopy()
@@ -748,7 +701,6 @@ var _ = Describe("ReconcilePostgres", func() {
 			})
 
 			Context("Creation is successful", func() {
-
 				It("should not recreate extisting schema", func() {
 					// Expected method calls
 					// customers schema
@@ -765,11 +717,7 @@ var _ = Describe("ReconcilePostgres", func() {
 					Expect(foundPostgres.Status.Schemas[0]).To(Equal("stores"))
 					Expect(foundPostgres.Status.Schemas[1]).To(Equal("customers"))
 				})
-
 			})
-
 		})
-
 	})
-
 })
